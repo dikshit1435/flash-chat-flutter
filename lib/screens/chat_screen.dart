@@ -215,7 +215,7 @@ MessageBubble(this.bubbleMessage,this.bubbleSender,this.isMe,this.time);
                 ),
                 Padding(
                   padding: const EdgeInsets.only(left: 25.0,right:5,bottom: 2),
-                  child: Text('$time',style:TextStyle(fontSize:10,color: isMe==true?Colors.white:Colors.black),),
+                  child: Text('$time',style:TextStyle(fontSize:10,fontWeight: FontWeight.w400,color: isMe==true?Colors.white:Colors.black),),
                 )
               ],
             ),
