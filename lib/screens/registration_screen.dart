@@ -1,98 +1,119 @@
+import 'package:flash_chat/screens/chat_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flash_chat/components/round_button.dart';
+import 'package:flash_chat/constants.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_progress_hud/flutter_progress_hud.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class RegistrationScreen extends StatefulWidget {
+  static String id = 'registerScreen';
   @override
   _RegistrationScreenState createState() => _RegistrationScreenState();
 }
 
 class _RegistrationScreenState extends State<RegistrationScreen> {
+  final _auth = FirebaseAuth.instance;
+  final emailTextController = TextEditingController();
+  final passwordTextController = TextEditingController();
+  String email;
+  String password;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            Container(
-              height: 200.0,
-              child: Image.asset('images/logo.png'),
-            ),
-            SizedBox(
-              height: 48.0,
-            ),
-            TextField(
-              onChanged: (value) {
-                //Do something with the user input.
-              },
-              decoration: InputDecoration(
-                hintText: 'Enter your email',
-                contentPadding:
-                    EdgeInsets.symmetric(vertical: 10.0, horizontal: 20.0),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(32.0)),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.blueAccent, width: 1.0),
-                  borderRadius: BorderRadius.all(Radius.circular(32.0)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.blueAccent, width: 2.0),
-                  borderRadius: BorderRadius.all(Radius.circular(32.0)),
-                ),
-              ),
-            ),
-            SizedBox(
-              height: 8.0,
-            ),
-            TextField(
-              onChanged: (value) {
-                //Do something with the user input.
-              },
-              decoration: InputDecoration(
-                hintText: 'Enter your password',
-                contentPadding:
-                    EdgeInsets.symmetric(vertical: 10.0, horizontal: 20.0),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(32.0)),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.blueAccent, width: 1.0),
-                  borderRadius: BorderRadius.all(Radius.circular(32.0)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.blueAccent, width: 2.0),
-                  borderRadius: BorderRadius.all(Radius.circular(32.0)),
-                ),
-              ),
-            ),
-            SizedBox(
-              height: 24.0,
-            ),
-            Padding(
-              padding: EdgeInsets.symmetric(vertical: 16.0),
-              child: Material(
-                color: Colors.blueAccent,
-                borderRadius: BorderRadius.all(Radius.circular(30.0)),
-                elevation: 5.0,
-                child: MaterialButton(
-                  onPressed: () {
-                    //Implement registration functionality.
-                  },
-                  minWidth: 200.0,
-                  height: 42.0,
-                  child: Text(
-                    'Register',
-                    style: TextStyle(color: Colors.white),
+      body: ProgressHUD(
+        child: Builder(
+            builder: (context) =>Padding(
+          padding: EdgeInsets.symmetric(horizontal: 24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              Flexible(
+                child: Hero(tag: 'logo',
+                  child: Container(
+                    height: 200.0,
+                    child: Image.asset('images/logo.png'),
                   ),
                 ),
               ),
-            ),
-          ],
+              SizedBox(
+                height: 48.0,
+              ),
+              TextField(
+                controller: emailTextController,
+                keyboardType: TextInputType.emailAddress ,
+                onChanged: (value) {
+                  email = value;
+                },
+                decoration:kTextFieldDecoration.copyWith(hintText: 'Enter your E-mail')
+              ),
+              SizedBox(
+                height: 8.0,
+              ),
+              TextField(
+                controller: passwordTextController,
+                obscureText: true,
+                onChanged: (value) {
+                  password = value;
+                },
+                decoration: kTextFieldDecoration.copyWith(hintText:'Enter Your Password' )
+              ),
+              SizedBox(
+                height: 24.0,
+              ),
+             RoundedButton(buttonName: 'Register',buttonColor:Colors.blueAccent,
+                 onTap:() async{
+               setState(() {
+                final  progress = ProgressHUD.of(context);
+                 progress.show();
+               });
+
+               try { final newUser = await _auth.createUserWithEmailAndPassword( email: email, password: password);
+               if(newUser!=null){
+                 final SharedPreferences sharedPrefrences = await SharedPreferences
+                     .getInstance();
+                 sharedPrefrences.setString('email',emailTextController.text);
+                 Navigator.pushNamed(context, ChatScreen.id);
+                 emailTextController.clear();
+                 passwordTextController.clear();
+                 setState(() {
+                   final  progress = ProgressHUD.of(context);
+                   progress.dismiss();
+                 });
+               }
+
+               }
+               catch(e) {
+                 showDialog(context: context, builder:(context)=>
+                     AlertDialog(
+                       title: const Text('Registeration Error'),
+                       content: SingleChildScrollView(
+                         child: Text(e.toString()),
+                       ),
+                       actions: <Widget>[
+                         TextButton(
+                           child: const Text('Re-Enter'),
+                           onPressed: () {
+                             Navigator.of(context).pop();
+                           },
+                         ),
+
+                       ],
+                     ));
+                 setState(() {
+                   final  progress = ProgressHUD.of(context);
+                   progress.dismiss();
+                 });
+               }
+               }),
+            ],
+          ),
         ),
       ),
+      )
     );
   }
 }
